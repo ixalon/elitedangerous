@@ -40,7 +40,7 @@ var stateTotalsMax = Math.max.apply(null, stateTotals.top.concat(stateTotals.mid
 var timeTotalsMin = Math.min.apply(null, timeTotals.top.concat(timeTotals.middle, timeTotals.bottom).filter(identity));
 var timeTotalsMax = Math.max.apply(null, timeTotals.top.concat(timeTotals.middle, timeTotals.bottom).filter(identity));
 
-var pentagons = [
+var hexagons = [
 	{name: "top", left: 50, top: 50, columnWidth: 15, rowHeight: 12, gap: 10},
 	{name: "middle", left: 50, top: 220, columnWidth: 15, rowHeight: 12, gap: 10},
 	{name: "bottom", left: 50, top: 390, columnWidth: 15, rowHeight: 12, gap: 10}
@@ -62,9 +62,9 @@ function draw(canvas, frame, min, max) {
 	var ctx = canvas.getContext('2d');
 	ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-	pentagons.forEach(function(pentagon) {
-		var c = coords(pentagon.left, pentagon.top, pentagon.columnWidth, pentagon.rowHeight, pentagon.gap);
-		var triangles = frame[pentagon.name];
+	hexagons.forEach(function(hexagon) {
+		var c = coords(hexagon.left, hexagon.top, hexagon.columnWidth, hexagon.rowHeight, hexagon.gap);
+		var triangles = frame[hexagon.name];
 		var i = 0;
 		c.forEach(function(tri) {
 			var state = triangles[i];
