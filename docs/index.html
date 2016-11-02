@@ -284,7 +284,8 @@ function previous() {
 		<label for="op_xor_not"><input type="radio" name="op" id="op_xor_not" value="xor_not" onclick="drawDerived(this);" /> XOR NOT</label></p>
 	</div>
 	<div class="col"><canvas id="pattern" width="220" height="570" onclick="clickPattern(this, event);"></canvas><div>Pattern</div>
-		<input type="button" value="Reset to Relic" onclick="resetPattern();" />
+		<input type="button" value="Reset to Relic" onclick="resetPattern();" /><br/>
+		(click pattern to modify)
 	</div>
 	<div class="col"><canvas id="active" width="220" height="570"></canvas><div>Active/Inactive</div></div>
 	<div class="col"><canvas id="stateHeat" width="220" height="570"></canvas><div>State Heat Map</div></div>
