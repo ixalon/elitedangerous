@@ -60,6 +60,14 @@ function resetPattern() {
 	pattern = JSON.parse(JSON.stringify(relic));
 	drawDerived();
 }
+function patternAllOn() {
+	pattern = { top: Array(36).fill(true) };
+	drawDerived();
+}
+function patternAllOff() {
+	pattern = { top: Array(36).fill(false) };
+	drawDerived();
+}
 
 var states = data.reduce(function(acc, frame) {
 	acc[frame.state] = frame.triangles;
@@ -285,6 +293,8 @@ function previous() {
 	</div>
 	<div class="col"><canvas id="pattern" width="220" height="570" onclick="clickPattern(this, event);"></canvas><div>Pattern</div>
 		<input type="button" value="Reset to Relic" onclick="resetPattern();" /><br/>
+		<input type="button" value="All On" onclick="patternAllOn();" />
+		<input type="button" value="All Off" onclick="patternAllOff();" /><br/>
 		(click pattern to modify)
 	</div>
 	<div class="col"><canvas id="active" width="220" height="570"></canvas><div>Active/Inactive</div></div>
