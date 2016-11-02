@@ -169,9 +169,9 @@ function draw(canvas, frame, min, max, op) {
 			var i = 0;
 			c.forEach(function(tri) {
 				var state = op(triangles[i], i);
-				if(state === true || (state && !min)) {
+				if(state === true || (state && min === undefined)) {
 					ctx.fillStyle = "#ffffff";
-				} else if(state === false || (!state && !min)) {
+				} else if(state === false || (!state && min === undefined) || (min === Infinity)) {
 					ctx.fillStyle = "#004444";
 				} else {
 					var clr = Math.round(((state - min) / (max - min)) * 255.0);
