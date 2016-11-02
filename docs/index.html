@@ -55,41 +55,62 @@ var relic = {
 	]
 };
 
+var pattern;
+function resetPattern() {
+	pattern = JSON.parse(JSON.stringify(relic));
+	drawDerived();
+}
+
 var states = data.reduce(function(acc, frame) {
 	acc[frame.state] = frame.triangles;
 	return acc;
 }, {});
 
-function addState(acc, state) {
+function addState(acc, state, op) {
 	if(!acc) {
 		acc = {
 			top: Array(36).fill(0),
 			middle: Array(36).fill(0),
 			bottom: Array(36).fill(0)
 		};
-		console.log(acc);
 	}
 	for(var i in state.top) {
-		acc.top[i] += state.top[i] ? 1 : 0;
+		acc.top[i] += op(state.top[i], i) ? 1 : 0;
 	}
 	for(var i in state.middle) {
-		acc.middle[i] += state.middle[i] ? 1 : 0;
+		acc.middle[i] += op(state.middle[i], i) ? 1 : 0;
 	}
 	for(var i in state.bottom) {
-		acc.bottom[i] += state.bottom[i] ? 1 : 0;
+		acc.bottom[i] += op(state.bottom[i], i) ? 1 : 0;
 	}
 	return acc;
 }
 
 function identity(x) { return x; }
 
-var stateTotals = Object.keys(states).reduce(function(acc, k) { return addState(acc, states[k]) }, null);
-var timeTotals = Object.keys(data).reduce(function(acc, k) { return addState(acc, data[k].triangles) }, null);
-
-var stateTotalsMin = Math.min.apply(null, stateTotals.top.concat(stateTotals.middle, stateTotals.bottom).filter(identity));
-var stateTotalsMax = Math.max.apply(null, stateTotals.top.concat(stateTotals.middle, stateTotals.bottom).filter(identity));
-var timeTotalsMin = Math.min.apply(null, timeTotals.top.concat(timeTotals.middle, timeTotals.bottom).filter(identity));
-var timeTotalsMax = Math.max.apply(null, timeTotals.top.concat(timeTotals.middle, timeTotals.bottom).filter(identity));
+var operations = {
+	none: function(x, i) {
+		return x;
+	},
+	and: function(x, i) {
+		return x && pattern.top[i];
+	},
+	or: function(x, i) {
+		return x || pattern.top[i];
+	},
+	xor: function(x, i) {
+		return x ^ pattern.top[i];
+	},
+	and_not: function(x, i) {
+		return x && !pattern.top[i];
+	},
+	or_not: function(x, i) {
+		return x || !pattern.top[i];
+	},
+	xor_not: function(x, i) {
+		return x ^ !pattern.top[i];
+	}
+};
 
 var hexagons = [
 	{name: "top", left: 50, top: 50, columnWidth: 15, rowHeight: 12, gap: 10},
@@ -108,8 +129,28 @@ function coords(left, top, columnWidth, rowHeight, gap) {
         }
         return output;
 }
+function clickPattern(canvas, e) {
+	var x = e.offsetX;
+	var y = e.offsetY;
+	var c = coords(hexagons[0].left, hexagons[0].top, hexagons[0].columnWidth, hexagons[0].rowHeight, hexagons[0].gap);
+	var distances = c.map(function(coord, i) { return { index: i, dist: Math.pow(x - coord.x, 2) + Math.pow(y - coord.y, 2) } });
+	distances.sort(function(a, b) {
+		if(a.dist < b.dist) {
+			return -1;
+		} else if(a.dist > b.dist) {
+			return 1;
+		} else {
+			return 0;
+		}
+	});
+	if(distances[0].dist < 50) {
+		pattern.top[distances[0].index] = !pattern.top[distances[0].index];
+		drawDerived();
+	}
+}
 
-function draw(canvas, frame, min, max) {
+function draw(canvas, frame, min, max, op) {
+	if(!op) op = identity;
 	var ctx = canvas.getContext('2d');
 	ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -119,7 +160,7 @@ function draw(canvas, frame, min, max) {
 		if(triangles) {
 			var i = 0;
 			c.forEach(function(tri) {
-				var state = triangles[i];
+				var state = op(triangles[i], i);
 				if(state === true || (state && !min)) {
 					ctx.fillStyle = "#ffffff";
 				} else if(state === false || (!state && !min)) {
@@ -145,12 +186,75 @@ function draw(canvas, frame, min, max) {
 		}
 	});
 };
+
+var op = operations.none;
+var interval = 0;
+var frame = 0;
+var animCanvas = null;
+function drawFrame() {
+	if(!animCanvas) {
+		animCanvas = document.getElementById('output');
+	}
+	document.getElementById('state').innerHTML = "State: " + data[frame].state + ", Frame: " + frame;
+	draw(animCanvas, data[frame].triangles, undefined, undefined, op);
+}
+
+function drawDerived(t) {
+	if(t) {
+		op = operations[t.value];
+	}
+	var stateTotals = Object.keys(states).reduce(function(acc, k) { return addState(acc, states[k], op) }, null);
+	var timeTotals = Object.keys(data).reduce(function(acc, k) { return addState(acc, data[k].triangles, op) }, null);
+
+	var stateTotalsMin = Math.min.apply(null, stateTotals.top.concat(stateTotals.middle, stateTotals.bottom).filter(identity));
+	var stateTotalsMax = Math.max.apply(null, stateTotals.top.concat(stateTotals.middle, stateTotals.bottom).filter(identity));
+	var timeTotalsMin = Math.min.apply(null, timeTotals.top.concat(timeTotals.middle, timeTotals.bottom).filter(identity));
+	var timeTotalsMax = Math.max.apply(null, timeTotals.top.concat(timeTotals.middle, timeTotals.bottom).filter(identity));
+
+	draw(document.getElementById('active'), stateTotals);
+	draw(document.getElementById('stateHeat'), stateTotals, stateTotalsMin, stateTotalsMax);
+	draw(document.getElementById('timeHeat'), timeTotals, timeTotalsMin, timeTotalsMax);
+	draw(document.getElementById('pattern'), pattern);
+
+	drawFrame();
+}
+
+function start() {
+	stop();
+	var speed = parseFloat(document.getElementById('speed').value);
+	drawDerived();
+	interval = setInterval(next, (1000.0 / 60.0) / speed);
+}
+function stop() {
+	if(interval) {
+		clearInterval(interval);
+		interval = 0;
+	}
+}
+function toggle(btn) {
+	if(interval) {
+		stop();
+		btn.value = "Play";
+	} else {
+		start();
+		btn.value = "Pause";
+	}
+}
+function next() {
+        if(++frame >= data.length) frame = 0;
+	drawFrame();
+}
+function previous() {
+	if(--frame < 0) frame = data.length - 1;
+	drawFrame();
+}
 </script>
 <style type="text/css">
 	body {
 		background-color: #000;
 		font-family: sans-serif;
 		color: #fff;
+		font-size: 0.8em;
 	}
 	canvas {
 		border: 1px solid white;
@@ -158,37 +262,36 @@ function draw(canvas, frame, min, max) {
 	div {
 		width: 220px;
 		text-align: center;
-		display: inline-block;
+		float: left;
 	}
 </style>
 </head>
 <body>
-	<h1>Synuefe Obelisk Data</h1>
-	<canvas id="output" width="220" height="570"></canvas>
-	<canvas id="relic" width="220" height="570"></canvas>
-	<canvas id="active" width="220" height="570"></canvas>
-	<canvas id="stateHeat" width="220" height="570"></canvas>
-	<canvas id="timeHeat" width="220" height="570"></canvas>
-	<br/>
-	<div id="state"></div>
-	<div id="state">Relic</div>
-	<div id="state">Active/Inactive</div>
-	<div id="state">State Heat Map</div>
-	<div id="state">Time Heat Map</div>
+	<h1>Synuefe Obelisk Data Playground</h1>
+	<div class="col"><canvas id="output" width="220" height="570"></canvas>
+		<div id="state"></div>
+		<input type="button" value="Back" onclick="previous();" />
+		<input type="button" value="Pause" onclick="toggle(this);" />
+		<input type="button" value="Forward" onclick="next();" /><br/
+		<label for="speed">Speed: <input type="text" id="speed" value="1.0" size="5" onChange="start();" /> <input type="button" value="Set" onClick="start();"/></label><p>
+		Pattern Operation:
+		<label for="op_none"><input type="radio" name="op" id="op_none" value="none" checked onclick="drawDerived(this);" /> None</label>
+		<label for="op_and"><input type="radio" name="op" id="op_and" value="and" onclick="drawDerived(this);" /> AND</label>
+		<label for="op_or"><input type="radio" name="op" id="op_or" value="or" onclick="drawDerived(this);" /> OR</label>
+		<label for="op_xor"><input type="radio" name="op" id="op_xor" value="xor" onclick="drawDerived(this);" /> XOR</label>
+		<label for="op_and_not"><input type="radio" name="op" id="op_and_not" value="and_not" onclick="drawDerived(this);" /> AND NOT</label>
+		<label for="op_or_not"><input type="radio" name="op" id="op_or_not" value="or_not" onclick="drawDerived(this);" /> OR NOT</label>
+		<label for="op_xor_not"><input type="radio" name="op" id="op_xor_not" value="xor_not" onclick="drawDerived(this);" /> XOR NOT</label></p>
+	</div>
+	<div class="col"><canvas id="pattern" width="220" height="570" onclick="clickPattern(this, event);"></canvas><div>Pattern</div>
+		<input type="button" value="Reset to Relic" onclick="resetPattern();" />
+	</div>
+	<div class="col"><canvas id="active" width="220" height="570"></canvas><div>Active/Inactive</div></div>
+	<div class="col"><canvas id="stateHeat" width="220" height="570"></canvas><div>State Heat Map</div></div>
+	<div class="col"><canvas id="timeHeat" width="220" height="570"></canvas><div>Time Heat Map</div></div>
 	<script>
-		var canvas = document.getElementById('output');
-		draw(document.getElementById('active'), stateTotals);
-		draw(document.getElementById('stateHeat'), stateTotals, stateTotalsMin, stateTotalsMax);
-		draw(document.getElementById('timeHeat'), timeTotals, timeTotalsMin, timeTotalsMax);
-		draw(document.getElementById('relic'), relic);
-
-		var frame = 0;
-		setInterval(function() {
-			if(++frame >= data.length) frame = 0;
-			document.getElementById('state').innerHTML = "State: " + data[frame].state;
-			draw(canvas, data[frame].triangles);
-		}, 1000 / 60);
-
+		resetPattern();
+		start();
 	</script>
 </body>
 </html>
