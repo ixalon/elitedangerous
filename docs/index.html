@@ -69,7 +69,7 @@ var patterns = {
 		false, false, false, true,
 		false, true,
 		false, false
-	]},
+	], large: [5, 19, 29] },
 	base3: { top: [
 		true, false,
 		true, false,
@@ -85,7 +85,7 @@ var patterns = {
 		false, false, false, false,
 		false, false,
 		false, false
-	]},
+	], large: [12, 26, 34] },
 	base2: { top: [
 		false, false,
 		false, true,
@@ -98,7 +98,7 @@ var patterns = {
 		false, false, false, false,
 		false, true,
 		false, true
-	]},
+	], large: [5, 19, 29] },
 	base4: { top: [
 		false, false,
 		false, false,
@@ -111,7 +111,7 @@ var patterns = {
 		true, false, false, false,
 		true, false,
 		true, false
-	]}
+	], large: [0, 10, 20] }
 };
 
 var pattern;
@@ -242,6 +242,26 @@ function draw(canvas, frame, min, max, op) {
 				ctx.fill();
 				i++;
 			});
+			if(pattern.large) {
+				var p1 = c[pattern.large[0]];
+				var p2 = c[pattern.large[1]];
+				var p3 = c[pattern.large[2]];
+				ctx.strokeStyle = "#ffffff";
+				ctx.lineWidth = 2;
+				ctx.beginPath();
+				if(p1.pos === "right") {
+					ctx.moveTo(p1.x-hexagon.columnWidth/2, p1.y-hexagon.rowHeight);
+					ctx.lineTo(p2.x+hexagon.columnWidth/2, p2.y);
+					ctx.lineTo(p3.x-hexagon.columnWidth/2, p3.y+hexagon.rowHeight);
+					ctx.lineTo(p1.x-hexagon.columnWidth/2, p1.y-hexagon.rowHeight);
+				} else {
+					ctx.moveTo(p1.x+hexagon.columnWidth/2, p1.y-hexagon.rowHeight);
+					ctx.lineTo(p2.x-hexagon.columnWidth/2, p2.y);
+					ctx.lineTo(p3.x+hexagon.columnWidth/2, p3.y+hexagon.rowHeight);
+					ctx.lineTo(p1.x+hexagon.columnWidth/2, p1.y-hexagon.rowHeight);
+				}
+				ctx.stroke();
+			}
 		}
 	});
 };
