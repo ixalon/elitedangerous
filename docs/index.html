@@ -111,7 +111,23 @@ var patterns = {
 		true, false, false, false,
 		true, false,
 		true, false
-	], large: [0, 10, 20] }
+	], large: [0, 10, 20] },
+	base5: { top: [
+		false, false,
+		false, false,
+		true, false, false, false,
+		true, false, true, false,
+		false, false, false, false,
+		false, false, true, false,
+		false, false, false, false,
+		false, false, false, false,
+		false, false, false, false,
+		false, false, false, false,
+		false, false, false, false,
+		false, false, false, false,
+		false, false,
+		false, false
+	], large: [12, 26, 34] }
 };
 
 var pattern;
@@ -371,6 +387,7 @@ function previous() {
 		<input type="button" value="Beacon Base 2" onclick="resetPattern(patterns.base2);" /><br/>
 		<input type="button" value="Beacon Base 3" onclick="resetPattern(patterns.base3);" /><br/>
 		<input type="button" value="Beacon Base 4" onclick="resetPattern(patterns.base4);" /><br/>
+		<input type="button" value="Beacon Base 5?" onclick="resetPattern(patterns.base5);" /><br/>
 		<input type="button" value="All On" onclick="resetPattern(patterns.on);" />
 		<input type="button" value="All Off" onclick="resetPattern(patterns.off);" /><br/>
 		(click pattern to modify)
